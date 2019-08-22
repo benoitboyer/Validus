@@ -27,8 +27,6 @@ class DashboardView(LoginRequiredMixin,generic.ListView):
         return context
 
 
-
-
 class NewCallView(LoginRequiredMixin,generic.CreateView):
     template_name = "capital_calls/new_call.html"
     form_class = CallForm
@@ -41,7 +39,7 @@ class NewCallView(LoginRequiredMixin,generic.CreateView):
 
     def form_valid(self,form):
         self.object = form.save(commit=False)
-        self.object.user=self.request.user
+        self.object.user = self.request.user
         self.object.save()
         context= self.get_context_data()
         commitments = context["commitments"]
@@ -51,7 +49,7 @@ class NewCallView(LoginRequiredMixin,generic.CreateView):
             undraw_capital = commitment.get_undraw_capital_amount()
             if capital_requirement == 0:
                 break
-            elif capital_requirement > undraw_capital:
+            elif capital_requirement >= undraw_capital:
                 FundInvestment.objects.create(
                     call=self.object,
                     commitment=commitment,

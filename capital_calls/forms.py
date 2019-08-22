@@ -1,7 +1,6 @@
 from django import forms
 from .models import Call
 
-
 class CallForm(forms.ModelForm):
     RULES_CHOICES = (
         ("fifo", "First In First Out (FIFO)"),
