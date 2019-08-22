@@ -1,0 +1,41 @@
+{% load static %}
+<nav class="navbar navbar-custom navbar-expand-md">
+  <div class="navbar-collapse collapse w-100 order-1 order-md-0 dual-collapse2">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item">
+        <a class="navbar-brand h2" href="{% url "capital_calls:welcome" %}">
+          <img style=" max-width:60%;
+		      max-height:60%;" alt="" src="{% static "capital_calls/img/logo.png" %}"/>
+	</a>
+      </li>
+    </ul>
+  </div>
+  {% url 'capital_loans:dashboard' as dashboard %}{% if request.get_full_path == dashboard %}
+    <div class="mx-auto order-0">
+      <a class="navbar-brand mx-auto" href="#">Navbar 2</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".dual-collapse2">
+	<span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+  {% endif %}
+  
+  <div class="navbar-collapse collapse w-100 order-3 dual-collapse2">
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'capital_calls:dashboard' %}">Dashboard</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'capital_calls:new_call' %}">New Call</a>
+      </li>
+      {% if user.is_authenticated %}
+      <li class="nav-item">
+        <a class="nav-link" href="/accounts/logout/">Logout</a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="/accounts/login/">Login</a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>

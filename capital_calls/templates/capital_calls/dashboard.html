@@ -1,0 +1,29 @@
+{% extends "capital_calls/base.html" %}
+{% block content %}
+  <table class="table mt-4">
+    <thead>
+      <tr>
+	<th scope="col">Date</th>
+	<th scope="col">Call #</th>
+	{% for fund in funds %}
+          <th scope="col">{{fund.name }}</th>
+	{% endfor %}
+	
+      </tr>
+    </thead>
+    <tbody>
+      {% load humanize %}
+      
+      {% for object in objects %}
+	<tr>
+	  <th>{{object.call.date|date:"d/m/Y"}}</th>
+	  <td>{{ object.call.id }}</td>	    
+	  {% for fund in funds %}
+            <td scope="col">{% if object.commitment.fund == fund  %}{{ object.amount|intcomma }}{% else %}-{% endif %}</td>
+	  {% endfor %}
+	</tr>
+      {% endfor %}
+      
+    </tbody>
+  </table>
+{% endblock content%}

@@ -1,0 +1,168 @@
+{% extends "capital_calls/base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <style>
+   .container {
+     min-width:90% !important;
+   }
+   .warning {
+     background-color:#f9e0db;
+   }
+   
+
+   
+  </style>
+  <div class="row align-justify-left">
+    <div class="mt-4 pr-4 col-md-3 col-12">
+      <form method="post">
+	{% csrf_token %}
+	{{ form|crispy }}
+        <br/>
+        <button type="button" id="calculate" class="btn btn-primary">Calculate</button>
+        <br/>
+        
+	<table class="table mt-4 final-drawdown-table warning" style="display:none;">
+	  <thead>
+	    <tr >
+	      <th>Fund</th>
+	      <th>Total Drawdown Notice</th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	    
+	  </tbody>
+	</table>
+        <br/>
+	<button type="submit" class="btn btn-primary mb-4 confirm-btn" style="display:none;">Confirm</button>
+        <br/>
+      </form>
+    </div>
+    <div class="col-md-9 col-12">
+      <table class="table mt-4 drawdown-table">
+	<thead>
+	  <tr class="d-flex">
+	    <th class="col ">Commitment_ID</th>
+	    <th class="col">Fund_ID</th>
+	    <th class="col">Date</th>
+	    <th class="col">Fund</th>
+	    <th class="col-2">Commited Amounts</th>
+	    <th class="col-2">Undraw Capital Commitment beofre Current Drawdown Notice</th>
+	    <th class="col-2">Total Drawdown Notice</th>
+	    <th class="col-2">Undrawn Capital Commitment after Current Drawdown Notice</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% load humanize %}
+	  {% for commitment in commitments %}
+            <tr class="d-flex text-right">
+	      <td class="col">
+		{{ commitment.id }}
+	      </td>
+              <td class="col">{{ commitment.fund.id }}</td>
+              <td class="col">{{ commitment.date|date:"d/m/Y" }}</td>
+              <td class="col">{{ commitment.fund.name }}</td>
+              <td class="col-2">{{ commitment.amount|intcomma }}</td>
+              <td class="col-2 undraw-capital-amount">{{ commitment.get_undraw_capital_amount|intcomma }}</td>
+              <td class="col-2 total-drawdown-notice">-</td>
+              <td class="col-2 undraw-capital-amount-after">-</td>
+	    </tr>
+	  {% endfor %}
+	</tbody>
+	
+      </table>
+    </div>
+  </div>
+{% endblock %}
+{% block script %}
+  <script>
+   $(document).ready(function(){
+     $("#id_date").datepicker({
+       format:'dd/mm/yyyy',
+     });
+     $("#calculate").on('click', function(){
+       let capital_requirement = new Number($("#id_capital_requirement").val())
+       console.log(capital_requirement)
+       let undraw_capital_amount_list = new Array()
+       let total_drawdown_notice_list = new Array()
+       let undraw_capital_amount_list_after = new Array()
+       $(".undraw-capital-amount").each(function(){
+	 let undraw_capital_amount = new Number($(this).text().replace(/,/g,''))
+	 undraw_capital_amount_list.push(undraw_capital_amount); 
+       });
+       $(".total-drawdown-notice").each(function(){
+	 total_drawdown_notice_list.push(new Number(0))
+	 $(this).addClass("warning")
+       })
+       $(".undraw-capital-amount-after").each(function(){
+	 undraw_capital_amount_list_after.push(new Number(0));
+	 $(this).addClass("warning")
+       });
+
+       for(var i=0; i < undraw_capital_amount_list.length ; i++){
+	 if(capital_requirement==0){
+	   total_drawdown_notice_list[i]= '-'
+	   undraw_capital_amount_list_after[i]=undraw_capital_amount_list[i]
+	 } else if(capital_requirement >= undraw_capital_amount_list[i]){
+	   total_drawdown_notice_list[i]=undraw_capital_amount_list[i]
+	   undraw_capital_amount_list_after[i] = '-'
+	   capital_requirement = capital_requirement - undraw_capital_amount_list[i]  
+
+	 } else if(capital_requirement < undraw_capital_amount_list[i]){
+	   total_drawdown_notice_list[i] = capital_requirement
+	   undraw_capital_amount_list_after[i]=undraw_capital_amount_list[i] - capital_requirement
+	   capital_requirement=0
+	 }
+       } 
+       $(".total-drawdown-notice").each(function(index){
+	 $(this).text(total_drawdown_notice_list[index])
+       })
+       $(".undraw-capital-amount-after").each(function(index){
+	 $(this).text(undraw_capital_amount_list_after[index])
+       });
+       $(".final-drawdown-table").fadeIn()
+       // get all the data sorted by fund
+       let funds = new Array()
+       let funds_drawdown = new Array()
+       let data = new Array()
+       $(".drawdown-table tbody tr").each(function(index){
+	 data.push({
+	   fund_id: $(this).find('td:nth-child(2)').text(),
+	   fund_name: $(this).find('td:nth-child(4)').text(),
+	   drawdown_notice: total_drawdown_notice_list[index]
+	 })
+       })
+       data.forEach(function(element) {
+	 if(!funds.includes(element.fund_name)){
+	   funds.push(element.fund_name)
+	   funds_drawdown.push(element.drawdown_notice)
+	 } else {
+	   for(var i=0; i<funds.length; i++ ){
+	     if(funds[i]==element.fund_name){
+	       if(!isNaN(element.drawdown_notice)){
+		 funds_drawdown[i] += element.drawdown_notice
+	       }
+	     }
+	   }
+	 }
+       })
+       $(".generated").remove()
+       for(var i=0; i<funds.length; i++ ){
+	 $(".final-drawdown-table tbody").append(`
+<tr class="generated">
+  <td>${funds[i]}</td>
+  <td>${funds_drawdown[i]}</td>
+</tr>
+	 `);
+       }
+       $(".drawdown-notice").each(function(index){
+	 $(this).text(total_drawdown_notice_list[index])
+       });
+       $(".confirm-btn").fadeIn()
+       
+
+     });
+   });   
+  </script>  
+{% endblock script %}
